@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Struktur Tree dan Hierarki — Informatika Kelas IX / Fase D</title>
+<style>
+/* ============ DASAR ============ */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#08172A; --bg2:#0F2A45;
+  --card:rgba(255,255,255,.07); --line:rgba(52,211,153,.28);
+  --accent:#34D399; --accent2:#FB923C; --accent3:#60A5FA; --pink:#F472B6;
+  --text:#EAF3FC; --muted:#9FB8D4;
+}
+html,body{height:100%;overflow:hidden;background:#040b14;}
+body{
+  font-family:"Segoe UI",Inter,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+}
+#stage{
+  position:absolute;left:50%;top:50%;
+  width:1280px;height:720px;
+  transform-origin:center center;
+  border-radius:12px;
+  overflow:hidden;
+  background:
+    radial-gradient(900px 520px at 10% 6%, rgba(52,211,153,.17), transparent 62%),
+    radial-gradient(820px 520px at 92% 94%, rgba(251,146,60,.15), transparent 62%),
+    radial-gradient(700px 500px at 84% 6%, rgba(96,165,250,.14), transparent 62%),
+    linear-gradient(152deg,#08172A 0%, #0F2A45 52%, #08172A 100%);
+  box-shadow:0 30px 90px rgba(0,0,0,.75);
+}
+#stage::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size:64px 64px;
+  -webkit-mask-image:radial-gradient(circle at 50% 50%, #000 35%, transparent 86%);
+  mask-image:radial-gradient(circle at 50% 50%, #000 35%, transparent 86%);
+}
+#stage::after{
+  content:"";position:absolute;width:560px;height:560px;border-radius:50%;
+  right:-190px;top:-210px;pointer-events:none;
+  background:radial-gradient(circle, rgba(52,211,153,.20), transparent 70%);
+  filter:blur(18px);
+  animation:orb1 16s ease-in-out infinite;
+}
+@keyframes orb1{
+  0%,100%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(-60px,70px) scale(1.15)}
+}
+
+/* ============ SLIDE & TRANSISI ============ */
+.slide{
+  position:absolute;inset:0;
+  padding:56px 64px 52px;
+  display:flex;flex-direction:column;
+  opacity:0;visibility:hidden;
+  transform:translateY(38px) scale(.97);
+  transition:opacity .55s ease, transform .7s cubic-bezier(.22,.9,.24,1), visibility .55s;
+  will-change:transform,opacity;
+}
+.slide[data-anim="left"]{transform:translateX(90px) scale(.97)}
+.slide[data-anim="right"]{transform:translateX(-90px) scale(.97)}
+.slide[data-anim="zoom"]{transform:scale(1.08)}
+.slide[data-anim="up"]{transform:translateY(80px) scale(.98)}
+.slide[data-anim="rot"]{transform:translateY(48px) rotate(-1.4deg) scale(.95)}
+.slide[data-anim="blur"]{transform:scale(1.05);filter:blur(14px)}
+.slide.active{
+  opacity:1;visibility:visible;transform:none;filter:none;
+}
+
+/* ============ REVEAL BERTAHAP ============ */
+.f{
+  opacity:0;
+  transform:translateY(16px);
+}
+.f.show{
+  animation:popIn .55s cubic-bezier(.2,.85,.25,1) both;
+}
+@keyframes popIn{
+  0%{opacity:0;transform:translateY(18px) scale(.98)}
+  60%{opacity:1}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+
+/* ============ HEADER SLIDE ============ */
+.eyebrow{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:15px;font-weight:800;letter-spacing:.19em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:10px;
+}
+.eyebrow .time{
+  font-size:14px;letter-spacing:.06em;text-transform:none;
+  color:var(--accent2);background:rgba(251,146,60,.12);
+  border:1px solid rgba(251,146,60,.36);border-radius:999px;padding:4px 12px;
+  font-weight:700;
+}
+h1.title{font-size:52px;line-height:1.1;font-weight:900;letter-spacing:-.5px}
+h2.title{font-size:38px;line-height:1.14;font-weight:900;letter-spacing:-.4px;margin-bottom:6px}
+.sub{font-size:21px;color:var(--muted);font-weight:600;margin-top:6px}
+.lead{font-size:24px;line-height:1.45;font-weight:600;color:#D9E9FA}
+.hl{color:var(--accent);font-weight:800}
+.hl2{color:var(--accent2);font-weight:800}
+.hl3{color:var(--accent3);font-weight:800}
+.grad{
+  background:linear-gradient(92deg,#34D399 0%,#60A5FA 48%,#F472B6 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.sBody{display:flex;flex-direction:column;gap:14px;margin-top:8px;flex:1;min-height:0}
+
+/* ============ LIST ============ */
+ul.bullets{list-style:none}
+ul.bullets li{
+  position:relative;padding-left:32px;margin:9px 0;font-size:23px;line-height:1.35;
+}
+ul.bullets li::before{
+  content:"▸";position:absolute;left:2px;top:0;color:var(--accent);
+  font-weight:900;font-size:22px;
+}
+ul.bullets.gold li::before{content:"★";color:var(--accent2);font-size:18px;top:3px}
+ul.bullets.blue li::before{content:"◆";color:var(--accent3);font-size:17px;top:4px}
+
+ol.steps{list-style:none;counter-reset:st}
+ol.steps li{
+  counter-increment:st;position:relative;padding-left:56px;margin:8px 0;
+  font-size:22px;line-height:1.35;min-height:38px;
+}
+ol.steps li::before{
+  content:counter(st);
+  position:absolute;left:0;top:-2px;width:38px;height:38px;border-radius:50%;
+  display:grid;place-items:center;font-weight:900;font-size:18px;color:#04170f;
+  background:linear-gradient(135deg,#34D399,#60A5FA);
+  box-shadow:0 6px 18px rgba(52,211,153,.32);
+}
+
+/* ============ GRID & CARD ============ */
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:16px 18px;
+  backdrop-filter:blur(6px);
+  box-shadow:0 10px 26px rgba(0,0,0,.22);
+}
+.card h3{font-size:20px;font-weight:800;color:var(--accent);margin-bottom:7px;line-height:1.2}
+.card p{font-size:17px;line-height:1.42;color:#C9DCF0}
+.card.gold{border-color:rgba(251,146,60,.40);background:rgba(251,146,60,.08)}
+.card.gold h3{color:var(--accent2)}
+.card.blue{border-color:rgba(96,165,250,.42);background:rgba(96,165,250,.08)}
+.card.blue h3{color:var(--accent3)}
+.card.pink{border-color:rgba(244,114,182,.42);background:rgba(244,114,182,.08)}
+.card.pink h3{color:var(--pink)}
+.card .ico{font-size:28px;display:block;margin-bottom:6px}
+
+/* ============ CHIP / BADGE ============ */
+.chip{
+  display:inline-block;padding:6px 14px;border-radius:999px;margin:4px 8px 4px 0;
+  background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.42);
+  color:var(--accent);font-size:16px;font-weight:800;
+}
+.chip.orange{background:rgba(251,146,60,.14);border-color:rgba(251,146,60,.42);color:var(--accent2)}
+.chip.blue{background:rgba(96,165,250,.14);border-color:rgba(96,165,250,.42);color:var(--accent3)}
+.chip.pink{background:rgba(244,114,182,.14);border-color:rgba(244,114,182,.42);color:var(--pink)}
+.badge{
+  display:inline-block;padding:5px 12px;border-radius:9px;font-size:15px;font-weight:700;
+  background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--muted);
+}
+
+/* ============ KODE ============ */
+.code{
+  font-family:ui-monospace,"Cascadia Mono",Consolas,"Courier New",monospace;
+  background:rgba(3,10,20,.68);
+  border-left:4px solid var(--accent);
+  border-radius:10px;
+  padding:14px 18px;
+  font-size:19px;line-height:1.5;color:#D5F6E7;
+  white-space:pre;overflow:hidden;
+  box-shadow:inset 0 0 40px rgba(52,211,153,.06);
+}
+.code.sm{font-size:15.5px;line-height:1.5}
+.code .c1{color:#60A5FA}
+.code .c2{color:#FB923C}
+.code .c3{color:#F472B6}
+
+/* ============ FLOWCHART ============ */
+.flow{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+.node{
+  padding:11px 18px;border-radius:13px;font-size:18px;font-weight:800;text-align:center;
+  background:rgba(96,165,250,.14);border:1.6px solid rgba(96,165,250,.55);color:#EAF3FC;
+  min-width:120px;
+}
+.node.oval{border-radius:999px;background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.55)}
+.node.diamond{
+  border:none;border-radius:0;min-width:180px;padding:22px 30px;
+  background:linear-gradient(135deg,rgba(251,146,60,.42),rgba(251,146,60,.14));
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
+}
+.arrow{color:var(--accent);font-size:26px;font-weight:900;line-height:1}
+.branchLabel{
+  font-size:15px;font-weight:800;color:var(--accent2);
+  background:rgba(251,146,60,.12);border:1px dashed rgba(251,146,60,.5);
+  border-radius:8px;padding:4px 10px;
+}
+
+/* ============ TIMELINE ============ */
+.timeline{position:relative;padding-left:26px}
+.timeline::before{
+  content:"";position:absolute;left:8px;top:6px;bottom:6px;width:3px;border-radius:3px;
+  background:linear-gradient(180deg,var(--accent),var(--accent3),var(--pink));
+}
+.tl{position:relative;margin:10px 0;font-size:20px;line-height:1.35}
+.tl::before{
+  content:"";position:absolute;left:-24px;top:8px;width:13px;height:13px;border-radius:50%;
+  background:var(--accent);box-shadow:0 0 0 4px rgba(52,211,153,.18);
+}
+
+/* ============ TABEL ============ */
+table{width:100%;border-collapse:collapse;font-size:17px;border-radius:12px;overflow:hidden}
+thead th{
+  background:rgba(52,211,153,.18);color:var(--accent);
+  padding:9px 12px;text-align:left;font-size:16px;letter-spacing:.03em;
+  border-bottom:1px solid var(--line);
+}
+tbody td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.07);color:#DCEBFA}
+tbody tr:nth-child(even){background:rgba(255,255,255,.045)}
+table.tight{font-size:15px}
+table.tight thead th{padding:7px 9px;font-size:14px}
+table.tight tbody td{padding:6px 9px}
+
+/* ============ LAIN-LAIN ============ */
+.bubble{
+  position:relative;
+  background:rgba(255,255,255,.10);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:16px 22px;
+  font-size:22px;font-weight:600;line-height:1.35;
+}
+.bubble::after{
+  content:"";position:absolute;left:40px;bottom:-13px;
+  border:13px solid transparent;border-top-color:rgba(255,255,255,.10);
+}
+.callout{
+  background:rgba(52,211,153,.10);
+  border:1px dashed rgba(52,211,153,.48);
+  border-radius:12px;padding:12px 18px;font-size:19px;line-height:1.4;font-weight:600;
+}
+.callout.warn{background:rgba(251,146,60,.10);border-color:rgba(251,146,60,.5)}
+.callout.pink{background:rgba(244,114,182,.10);border-color:rgba(244,114,182,.5)}
+
+/* ============ COVER ============ */
+.cover{display:flex;flex-direction:column;justify-content:center;height:100%;gap:14px}
+.cover .chipRow{margin-top:4px}
+.coverGrid{margin-top:2px}
+
+/* ============ HUD / KONTROL ============ */
+#hud{
+  position:absolute;top:16px;left:26px;right:26px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:14px;color:var(--muted);font-weight:700;letter-spacing:.06em;
+  z-index:40;pointer-events:none;
+}
+#hud .left{display:flex;align-items:center;gap:9px}
+#hud .dot{
+  width:9px;height:9px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 12px var(--accent);animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+#counter{
+  background:rgba(255,255,255,.08);border:1px solid var(--line);
+  border-radius:999px;padding:4px 14px;color:var(--text);font-weight:800;
+}
+#bar{
+  position:absolute;left:0;right:0;bottom:0;height:5px;z-index:40;
+  background:rgba(255,255,255,.07);
+}
+#bar i{
+  display:block;height:100%;width:0;border-radius:0 4px 4px 0;
+  background:linear-gradient(90deg,#34D399,#60A5FA,#F472B6);
+  box-shadow:0 0 14px rgba(52,211,153,.7);
+  transition:width .45s cubic-bezier(.3,.9,.3,1);
+}
+#hint{
+  position:absolute;left:50%;bottom:24px;transform:translateX(-50%);
+  font-size:16px;font-weight:700;color:var(--muted);
+  background:rgba(255,255,255,.06);border:1px solid var(--line);
+  padding:8px 20px;border-radius:999px;z-index:40;
+  animation:hintPulse 2.2s ease-in-out infinite;
+  transition:opacity .5s ease;
+  pointer-events:none;
+}
+#hint.off{opacity:0}
+@keyframes hintPulse{
+  0%,100%{transform:translateX(-50%) translateY(0);opacity:.75}
+  50%{transform:translateX(-50%) translateY(-5px);opacity:1}
+}
+#nav{
+  position:absolute;right:22px;bottom:20px;display:flex;gap:9px;z-index:50;
+}
+#nav button{
+  width:44px;height:44px;border-radius:12px;cursor:pointer;
+  background:rgba(255,255,255,.08);border:1px solid var(--line);
+  color:var(--text);font-size:18px;font-weight:800;
+  display:grid;place-items:center;
+  transition:transform .18s ease, background .25s ease, box-shadow .25s ease;
+}
+#nav button:hover{
+  background:rgba(52,211,153,.22);transform:translateY(-3px);
+  box-shadow:0 8px 20px rgba(52,211,153,.25);
+}
+#nav button:active{transform:scale(.92)}
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- ================= 1. COVER ================= -->
+  <section class="slide active" data-anim="zoom">
+    <div class="cover">
+      <div class="eyebrow"><span>Modul Ajar Informatika • Kelas IX • Fase D</span><span class="time">⏱ 2 × 40 menit</span></div>
+      <h1 class="title grad">Struktur Tree dan Hierarki</h1>
+      <p class="sub">Subtopik: Kartu Hierarki &amp; Folder Digital</p>
+
+      <div class="f chipRow">
+        <span class="chip">✍ Tim MGMP Informatika</span>
+        <span class="chip orange">🏫 SMP Negeri 19 Kota Bekasi</span>
+        <span class="chip blue">🧠 Discovery Learning</span>
+      </div>
+
+      <div class="f grid g3 coverGrid">
+        <div class="card"><h3>Pembelajaran Mendalam</h3>Deep Learning</div>
+        <div class="card blue"><h3>UDL</h3><p>Universal Design for Learning</p></div>
+        <div class="card gold"><h3>Elemen</h3><p>Berpikir Komputasional</p></div>
+      </div>
+
+      <div class="f card gold">
+        <h3>Tujuan</h3>
+        <p>Murid membangun dan menelusuri <b>tree</b>, lalu menghubungkannya dengan struktur folder digital dan organisasi.</p>
+      </div>
+    </div>
+    <!-- CATATAN GURU: Sambut murid, cek kehadiran, ajak berdoa. Sampaikan bahwa hari ini kita akan "menata" informasi
+         supaya mudah dicari. Tampilkan cover, minta murid membaca judul, lalu klik untuk memunculkan keterangan satu per satu.
+         INTERAKSI: "Coba tebak, apa hubungan pohon dengan folder di laptop?" -->
+  </section>
+
+  <!-- ================= 2. TUJUAN PEMBELAJARAN ================= -->
+  <section class="slide" data-anim="left">
+    <div class="eyebrow"><span>Tujuan Pembelajaran</span><span class="time">⏱ 3 menit</span></div>
+    <h2 class="title">Apa yang Akan Kita Capai Hari Ini?</h2>
+    <div class="sBody">
+      <ul class="bullets">
+        <li class="f">Menjelaskan konsep <span class="hl">struktur pohon</span> dengan bahasa sendiri.</li>
+        <li class="f">Membangun pohon dari <span class="hl3">kartu hierarki</span> secara berkelompok.</li>
+        <li class="f">Menelusuri <span class="hl2">jalur, induk, anak, dan daun</span>.</li>
+        <li class="f">Menghubungkan pohon dengan <span class="hl">folder digital</span>.</li>
+        <li class="f">Merapikan folder bertingkat di laptop atau Drive.</li>
+        <li class="f">Merefleksikan manfaat hierarki di kehidupan sehari-hari.</li>
+      </ul>
+      <div class="f callout">💬 <b>Interaksi:</b> Sebutkan satu hal di rumahmu yang tersusun bertingkat!</div>
+    </div>
+    <!-- CATATAN GURU: Bacakan tujuan, minta satu murid mengulang dengan bahasa sendiri.
+         Tekankan alur belajar: Memahami → Mengaplikasi → Merefleksi. -->
+  </section>
+
+  <!-- ================= 3. APERSEPSI ================= -->
+  <section class="slide" data-anim="right">
+    <div class="eyebrow"><span>Apersepsi</span><span class="time">⏱ 5 menit</span></div>
+    <h2 class="title">Pertanyaan Pemantik</h2>
+    <div class="sBody">
+      <div class="f bubble">🤔 “Mengapa file tugas di laptop sering sulit ditemukan?”</div>
+      <div class="f grid g3">
+        <div class="card"><h3>🌳 Silsilah</h3><p>Pernahkah kamu melihat silsilah keluarga? Bagaimana bentuknya?</p></div>
+        <div class="card blue"><h3>🏫 Organisasi</h3><p>Bagaimana struktur organisasi kelasmu? Siapa di atas, di bawah, sejajar?</p></div>
+        <div class="card gold"><h3>📁 Folder</h3><p>Jika folder adalah pohon, mana akar, cabang, dan daunnya?</p></div>
+      </div>
+      <div class="f callout warn">🎯 Jawab lisan dengan bebas — tidak ada jawaban yang salah!</div>
+    </div>
+    <!-- CATATAN GURU: Asesmen diagnostik awal. Catat nama murid yang aktif menjawab untuk pemetaan kelompok. -->
+  </section>
+
+  <!-- ================= 4. DEFINISI ================= -->
+  <section class="slide" data-anim="up">
+    <div class="eyebrow"><span>Definisi Konsep</span><span class="time">⏱ 6 menit</span></div>
+    <h2 class="title">Apa Itu Struktur Pohon?</h2>
+    <div class="sBody">
+      <div class="f lead">Struktur pohon = cara menyusun informasi secara <span class="hl">bertingkat</span>, dari atas ke bawah.</div>
+      <div class="f grid g2">
+        <div class="card">
+          <h3>🌳 Analogi 1 — Pohon Terbalik</h3>
+          <p><b>Akar</b> ada di paling atas. Dari akar tumbuh <b>cabang</b>. Ujung paling jauh yang tidak bercabang lagi disebut <b>daun</b>.</p>
+        </div>
+        <div class="card blue">
+          <h3>🗄️ Analogi 2 — Lemari Berkas</h3>
+          <p>Lemari → rak → kotak → kertas. Semakin ke dalam, semakin <b>spesifik</b>. Itulah cara kerja hierarki.</p>
+        </div>
+      </div>
+      <div class="f callout">🔑 Kata kunci: <b>bertingkat</b>, <b>bercabang</b>, <b>punya jalur</b>.</div>
+    </div>
+    <!-- CATATAN GURU: Tulis kata "bertingkat" besar-besar di papan tulis sebagai jangkar konsep. -->
+  </section>
+
+  <!-- ================= 5. CONTOH NYATA ================= -->
+  <section class="slide" data-anim="left">
+    <div class="eyebrow"><span>Contoh Nyata</span><span class="time">⏱ 5 menit</span></div>
+    <h2 class="title">Hierarki di Sekitar Kita</h2>
+    <div class="sBody">
+      <div class="f grid g4">
+        <div class="card"><span class="ico">👨‍👩‍👧</span><h3>Keluarga</h3><p>Kakek → Ayah → Anak. Silsilah keluarga.</p></div>
+        <div class="card blue"><span class="ico">🏫</span><h3>Sekolah</h3><p>Kepala Sekolah → Wakil → Guru → Murid.</p></div>
+        <div class="card gold"><span class="ico">💻</span><h3>Folder</h3><p>Tugas → Informatika → Tugas1.docx</p></div>
+        <div class="card pink"><span class="ico">🐾</span><h3>Hewan</h3><p>Hewan → Vertebrata → Mamalia → Kucing.</p></div>
+      </div>
+      <div class="f callout">👀 Semua contoh tadi punya satu kesamaan: <b>ada yang di atas dan ada yang di bawah</b>.</div>
+      <div class="f callout pink">💬 <b>Cek pemahaman:</b> Manakah yang menjadi “akar” pada struktur sekolah?</div>
+    </div>
+    <!-- CATATAN GURU: Tampilkan struktur OSIS atau bagan kelas sebagai penguat. Kaitkan dengan pengalaman murid. -->
+  </section>
+
+  <!-- ================= 6. INTI MATERI — 3 BENTUK ================= -->
+  <section class="slide" data-anim="zoom">
+    <div class="eyebrow"><span>Inti Materi</span><span class="time">⏱ 6 menit</span></div>
+    <h2 class="title">Tiga Wujud Hierarki</h2>
+    <div class="sBody">
+      <div class="f grid g3">
+        <div class="card">
+          <h3>1. Pohon Keluarga</h3>
+          <p>Setiap orang punya orang tua dan anak. Hubungan ini membentuk cabang keluarga.</p>
+        </div>
+        <div class="card blue">
+          <h3>2. Pohon Folder</h3>
+          <p>Folder berisi subfolder dan file. Komputer memakai prinsip ini setiap hari.</p>
+        </div>
+        <div class="card gold">
+          <h3>3. Pohon Organisasi</h3>
+          <p>Ketua membawahi sekretaris dan bendahara. Ada garis perintah yang jelas.</p>
+        </div>
+      </div>
+      <div class="f code sm">Bentuk umum:
+   [ AKAR ]              → simpul paling atas
+      │
+   ┌──┴──┐
+ [anak] [anak]          → simpul turunan
+   │
+ [daun]                 → simpul tanpa anak</div>
+      <div class="f callout">🧠 Ketiga wujud ini memakai <b>aturan yang sama</b>: satu induk, banyak anak.</div>
+    </div>
+    <!-- CATATAN GURU: Gunakan tiga bagan berbeda di papan agar murid melihat pola yang sama. -->
+  </section>
+
+  <!-- ================= 7. KODE + CHIPS ================= -->
+  <section class="slide" data-anim="right">
+    <div class="eyebrow"><span>Penjelasan Bertahap</span><span class="time">⏱ 7 menit</span></div>
+    <h2 class="title">Mengenal Akar, Cabang, dan Daun</h2>
+    <div class="sBody">
+      <div class="f code">Sekolah
+├── Kelas 7
+│   ├── 7A
+│   └── 7B
+├── Kelas 8
+│   ├── 8A
+│   └── 8B
+└── Kelas 9
+    ├── 9A
+    └── 9B</div>
+      <div class="f">
+        <span class="chip">Akar = Sekolah</span>
+        <span class="chip blue">Induk = Kelas 9</span>
+        <span class="chip orange">Anak = 9A, 9B</span>
+        <span class="chip pink">Daun = 7A, 7B, 8A, 8B, 9A, 9B</span>
+      </div>
+      <div class="f callout">✍️ <b>Aktivitas cepat:</b> Tunjuk satu simpul, sebutkan induk dan anaknya!</div>
+    </div>
+    <!-- CATATAN GURU: Minta murid menunjuk simpul secara acak. Koreksi jika ada yang menyebut "daun" untuk simpul bercabang. -->
+  </section>
+
+  <!-- ================= 8. TABEL ISTILAH ================= -->
+  <section class="slide" data-anim="up">
+    <div class="eyebrow"><span>Kamus Istilah</span><span class="time">⏱ 6 menit</span></div>
+    <h2 class="title">Istilah Penting Struktur Pohon</h2>
+    <div class="sBody">
+      <table class="tight">
+        <thead>
+          <tr><th style="width:22%">Istilah</th><th style="width:40%">Arti Sederhana</th><th>Contoh</th></tr>
+        </thead>
+        <tbody class="f">
+          <tr><td>Akar (root)</td><td>Simpul paling atas</td><td>Sekolah</td></tr>
+          <tr><td>Simpul (node)</td><td>Bagian di dalam pohon</td><td>Kelas 9</td></tr>
+          <tr><td>Induk (parent)</td><td>Simpul di atas simpul lain</td><td>Kelas 9 induk dari 9A</td></tr>
+          <tr><td>Anak (child)</td><td>Simpul di bawah simpul lain</td><td>9A anak dari Kelas 9</td></tr>
+        </tbody>
+        <tbody class="f">
+          <tr><td>Saudara (sibling)</td><td>Punya induk yang sama</td><td>9A dan 9B</td></tr>
+          <tr><td>Daun (leaf)</td><td>Simpul yang tidak punya anak</td><td>9A, 9B</td></tr>
+          <tr><td>Jalur (path)</td><td>Rute dari akar ke simpul</td><td>Sekolah → Kelas 9 → 9A</td></tr>
+          <tr><td>Tingkat (level)</td><td>Kedudukan dalam pohon</td><td>Akar = level 1</td></tr>
+        </tbody>
+      </table>
+      <div class="f callout">📌 Hafalkan 4 istilah inti dulu: <b>akar, induk, anak, daun</b>.</div>
+    </div>
+    <!-- CATATAN GURU: Minta murid menyalin tabel ke buku catatan sebagai rangkuman istilah. -->
+  </section>
+
+  <!-- ================= 9. CARA KERJA (OL.STEPS) ================= -->
+  <section class="slide" data-anim="left">
+    <div class="eyebrow"><span>Cara Kerja</span><span class="time">⏱ 6 menit</span></div>
+    <h2 class="title">Cara Menelusuri Pohon</h2>
+    <div class="sBody">
+      <ol class="steps">
+        <li class="f">Mulai dari <span class="hl">akar</span> pohon.</li>
+        <li class="f">Baca nama simpul yang sedang dikunjungi.</li>
+        <li class="f">Periksa: apakah simpul ini <span class="hl3">punya anak</span>?</li>
+        <li class="f">Jika ya, turun ke anak berikutnya.</li>
+        <li class="f">Jika tidak, simpul itu adalah <span class="hl2">daun</span>.</li>
+        <li class="f">Catat <span class="hl">jalur</span> dari akar sampai tujuan.</li>
+      </ol>
+      <div class="f callout">🧭 Jalur selalu dimulai dari akar, tidak boleh melompat sembarangan.</div>
+    </div>
+    <!-- CATATAN GURU: Demonstrasikan penelusuran langsung di papan tulis dengan struktur sekolah. -->
+  </section>
+
+  <!-- ================= 10. TABEL ATURAN / LEVEL ================= -->
+  <section class="slide" data-anim="right">
+    <div class="eyebrow"><span>Aturan &amp; Kategori</span><span class="time">⏱ 5 menit</span></div>
+    <h2 class="title">Tingkat (Level) dan Jalur (Path)</h2>
+    <div class="sBody">
+      <table>
+        <thead>
+          <tr><th style="width:16%">Level</th><th style="width:24%">Sebutan</th><th>Contoh pada Folder</th></tr>
+        </thead>
+        <tbody class="f">
+          <tr><td>Level 1</td><td>Akar</td><td>D:\Tugas_Sekolah</td></tr>
+          <tr><td>Level 2</td><td>Anak</td><td>Informatika</td></tr>
+          <tr><td>Level 3</td><td>Cucu</td><td>Gambar</td></tr>
+          <tr><td>Level 4</td><td>Daun</td><td>foto_kegiatan.png</td></tr>
+        </tbody>
+      </table>
+      <div class="f code sm">Path lengkap :
+D:\Tugas_Sekolah\Informatika\Tugas1_Tree.docx
+     └─ akar ─┘ └─ anak ─┘ └──── daun ────┘</div>
+      <div class="f callout warn">⚠️ Semakin dalam levelnya, semakin <b>spesifik</b> isinya.</div>
+    </div>
+    <!-- CATATAN GURU: Tekankan bahwa path adalah "alamat lengkap" sebuah file. -->
+  </section>
+
+  <!-- ================= 11. FLOWCHART ================= -->
+  <section class="slide" data-anim="zoom">
+    <div class="eyebrow"><span>Flowchart</span><span class="time">⏱ 6 menit</span></div>
+    <h2 class="title">Cabang atau Daun?</h2>
+    <div class="sBody">
+      <div class="f flow">
+        <div class="node oval">Mulai</div>
+        <span class="arrow">➜</span>
+        <div class="node">Kunjungi simpul</div>
+        <span class="arrow">➜</span>
+        <div class="node diamond">Punya anak?</div>
+      </div>
+      <div class="f flow">
+        <span class="branchLabel">TIDAK ↓</span>
+        <div class="node oval">Tandai sebagai DAUN</div>
+        <span class="arrow">➜</span>
+        <div class="node oval">Selesai</div>
+      </div>
+      <div class="f flow">
+        <span class="branchLabel">YA ↓</span>
+        <div class="node">Tandai sebagai CABANG</div>
+        <span class="arrow">➜</span>
+        <div class="node">Turun ke anak</div>
+        <span class="arrow">➜</span>
+        <div class="node oval">Ulangi</div>
+      </div>
+      <div class="f callout">🔁 Penelusuran berulang sampai semua simpul selesai diperiksa.</div>
+    </div>
+    <!-- CATATAN GURU: Gambarkan flowchart ini di papan, lalu minta murid menebak hasil untuk simpul tertentu. -->
+  </section>
+
+  <!-- ================= 12. KODE LENGKAP ================= -->
+  <section class="slide" data-anim="left">
+    <div class="eyebrow"><span>Studi Kasus</span><span class="time">⏱ 7 menit</span></div>
+    <h2 class="title">Folder Tugas Sekolah Rani</h2>
+    <div class="sBody">
+      <div class="f code sm">D:\Tugas_Sekolah
+├── Informatika
+│   ├── Tugas1_Tree.docx
+│   ├── Tugas2_Algoritma.docx
+│   └── Gambar
+├── Matematika
+│   └── PR_BangunRuang.pdf
+├── IPA
+│   └── Laporan_Percobaan.docx
+└── Pribadi
+    └── Jadwal_Kelas.xlsx</div>
+      <div class="f">
+        <span class="chip">Akar = Tugas_Sekolah</span>
+        <span class="chip blue">Anak = Informatika</span>
+        <span class="chip orange">Daun = Tugas1_Tree.docx</span>
+      </div>
+      <div class="f callout">🔍 <b>Cek pemahaman:</b> Apa induk dari folder <b>Gambar</b>?</div>
+    </div>
+    <!-- CATATAN GURU: Jawaban: Informatika. Lanjutkan dengan menanyakan path lengkap ke PR_BangunRuang.pdf. -->
+  </section>
+
+  <!-- ================= 13. KESALAHAN UMUM ================= -->
+  <section class="slide" data-anim="up">
+    <div class="eyebrow"><span>Peringatan</span><span class="time">⏱ 5 menit</span></div>
+    <h2 class="title">Sering Keliru — Ayo Perbaiki!</h2>
+    <div class="sBody">
+      <div class="f grid g2">
+        <div class="card pink">
+          <h3>❌ Salah</h3>
+          <p>• Menyimpan semua file di satu folder besar.<br>
+             • Memberi nama file “tugas baru fix final”.<br>
+             • Menganggap semua simpul adalah daun.<br>
+             • Melompati akar saat menulis path.</p>
+        </div>
+        <div class="card">
+          <h3>✅ Benar</h3>
+          <p>• Memakai folder bertingkat sesuai kategori.<br>
+             • Memberi nama file yang jelas dan spesifik.<br>
+             • Memeriksa dulu apakah simpul punya anak.<br>
+             • Menulis path selalu dari akar.</p>
+        </div>
+      </div>
+      <div class="f callout warn">💡 File yang rapi = waktu mencari yang jauh lebih singkat.</div>
+    </div>
+    <!-- CATATAN GURU: Tunjukkan contoh nyata desktop berantakan vs folder rapi jika proyektor memungkinkan. -->
+  </section>
+
+  <!-- ================= 14. ANALOGI TAMBAHAN ================= -->
+  <section class="slide" data-anim="right">
+    <div class="eyebrow"><span>Analogi Tambahan</span><span class="time">⏱ 4 menit</span></div>
+    <h2 class="title">Lemari Pakaian dan Pohon</h2>
+    <div class="sBody">
+      <div class="f lead">Bayangkan lemari pakaianmu. Kalau semua baju ditumpuk jadi satu, mencari kaos kaki pasti lama.</div>
+      <div class="f code sm">Lemari
+├── Rak Atas
+│   ├── Kaus
+│   └── Kemeja
+├── Rak Tengah
+│   └── Celana
+└── Rak Bawah
+    └── Kaos Kaki</div>
+      <div class="f grid g3">
+        <div class="card"><h3>Akar</h3><p>Lemari</p></div>
+        <div class="card blue"><h3>Cabang</h3><p>Rak Atas, Tengah, Bawah</p></div>
+        <div class="card gold"><h3>Daun</h3><p>Kaus, Kemeja, Celana, Kaos Kaki</p></div>
+      </div>
+      <div class="f callout">🎒 Prinsip yang sama kamu pakai saat merapikan tas dan folder tugas.</div>
+    </div>
+    <!-- CATATAN GURU: Minta murid membuat analogi sendiri dalam 30 detik, lalu bagikan ke teman sebangku. -->
+  </section>
+
+  <!-- ================= 15. AKTIVITAS KELOMPOK ================= -->
+  <section class="slide" data-anim="left">
+    <div class="eyebrow"><span>Aktivitas Kelompok</span><span class="time">⏱ 3 menit</span></div>
+    <h2 class="title">Pilih Misi Kelompokmu</h2>
+    <div class="sBody">
+      <div class="f grid g4">
+        <div class="card"><span class="ico">🃏</span><h3>Misi A</h3><p>Susun kartu hierarki sekolah menjadi pohon yang logis.</p></div>
+        <div class="card blue"><span class="ico">📁</span><h3>Misi B</h3><p>Buat folder bertingkat di laptop atau Google Drive.</p></div>
+        <div class="card gold"><span class="ico">🗺️</span><h3>Misi C</h3><p>Gambar pohon silsilah keluarga sederhana.</p></div>
+        <div class="card pink"><span class="ico">🏆</span><h3>Misi D</h3><p>Buat pohon organisasi ekstrakurikuler sekolah.</p></div>
+      </div>
+      <div class="f callout">👥 Kelompok 4–5 orang • Waktu 15 menit • Hasil ditempel untuk gallery walk.</div>
+      <div class="f callout warn">📝 Wajib menuliskan: akar, induk, anak, saudara, dan daun.</div>
+    </div>
+    <!-- CATATAN GURU: Bagi kelompok secara heterogen. Siapkan kartu hierarki yang sudah dipotong sebelumnya. -->
+  </section>
+
+  <!-- ================= 16. LANGKAH KERJA ================= -->
+  <section class="slide" data-anim="up">
+    <div class="eyebrow"><span>Langkah Kerja</span><span class="time">⏱ 20 menit</span></div>
+    <h2 class="title">Alur Kerja Hari Ini</h2>
+    <div class="sBody">
+      <ol class="steps">
+        <li class="f">Terima satu set <span class="hl3">kartu hierarki</span> dari guru.</li>
+        <li class="f">Diskusikan urutan yang paling logis.</li>
+        <li class="f">Susun kartu menjadi <span class="hl">struktur pohon</span>.</li>
+        <li class="f">Tentukan akar, induk, anak, saudara, daun.</li>
+        <li class="f">Tulis <span class="hl2">path</span> dari akar ke salah satu daun.</li>
+        <li class="f">Buat folder digital sesuai struktur tersebut.</li>
+        <li class="f">Presentasikan hasil dan beri tanggapan kelompok lain.</li>
+      </ol>
+      <div class="f">
+        <span class="chip">⏱ 15 menit kartu</span>
+        <span class="chip blue">⏱ 15 menit folder</span>
+        <span class="chip orange">⏱ 10 menit presentasi</span>
+      </div>
+    </div>
+    <!-- CATATAN GURU: Berkeliling, gunakan checklist observasi. Bantu kelompok yang belum mengenal dasar TIK. -->
+  </section>
+
+  <!-- ================= 17. KUIS KILAT ================= -->
+  <section class="slide" data-anim="right">
+    <div class="eyebrow"><span>Cek Pemahaman</span><span class="time">⏱ 6 menit</span></div>
+    <h2 class="title">Kuis Kilat</h2>
+    <div class="sBody">
+      <div class="f grid g3">
+        <div class="card"><h3>Soal 1</h3><p>Bagian paling atas pada struktur pohon disebut …</p></div>
+        <div class="card blue"><h3>Soal 2</h3><p>Jika path <b>D:\Sekolah\Kelas9\Informatika\Tugas.docx</b>, siapa induk folder Informatika?</p></div>
+        <div class="card gold"><h3>Soal 3</h3><p>Mengapa struktur pohon membuat pencarian file lebih cepat?</p></div>
+      </div>
+      <div class="f grid g3">
+        <div class="card"><h3>✅ Jawaban 1</h3><p><b>Akar (root)</b></p></div>
+        <div class="card blue"><h3>✅ Jawaban 2</h3><p><b>Kelas9</b></p></div>
+        <div class="card gold"><h3>✅ Jawaban 3</h3><p>Karena kita bisa langsung menuju cabang yang tepat, tidak menyisir semua file.</p></div>
+      </div>
+      <div class="f callout">🎯 Angkat tangan sebelum menjawab — jaga suasana menyenangkan.</div>
+    </div>
+    <!-- CATATAN GURU: Gunakan kuis ini sebagai asesmen formatif. Catat skor lisan murid. -->
+  </section>
+
+  <!-- ================= 18. REFLEKSI ================= -->
+  <section class="slide" data-anim="zoom">
+    <div class="eyebrow"><span>Aktivitas Reflektif</span><span class="time">⏱ 4 menit</span></div>
+    <h2 class="title">Exit Ticket 3 - 2 - 1</h2>
+    <div class="sBody">
+      <div class="f grid g3">
+        <div class="card"><h3>3</h3><p>Tuliskan <b>tiga hal baru</b> yang kamu pelajari hari ini.</p></div>
+        <div class="card blue"><h3>2</h3><p>Tuliskan <b>dua hal</b> yang masih ingin kamu pelajari.</p></div>
+        <div class="card gold"><h3>1</h3><p>Tuliskan <b>satu pertanyaan</b> yang masih mengganjal.</p></div>
+      </div>
+      <div class="f callout">📝 Tulis di kertas kecil, kumpulkan sebelum keluar kelas.</div>
+      <div class="f callout pink">💬 <b>Diskusi:</b> Apa manfaat struktur pohon untuk cara belajarmu?</div>
+    </div>
+    <!-- CATATAN GURU: Baca exit ticket untuk menentukan tindak lanjut pertemuan berikutnya. -->
+  </section>
+
+  <!-- ================= 19. RUBRIK PENILAIAN ================= -->
+  <section class="slide" data-anim="left">
+    <div class="eyebrow"><span>Rubrik Penilaian</span><span class="time">⏱ 4 menit</span></div>
+    <h2 class="title">Bagaimana Karyamu Dinilai?</h2>
+    <div class="sBody">
+      <table class="tight">
+        <thead>
+          <tr>
+            <th style="width:17%">Komponen</th>
+            <th>1 — Perlu Bimbingan</th>
+            <th>2 — Cukup</th>
+            <th>3 — Baik</th>
+            <th>4 — Sangat Baik</th>
+          </tr>
+        </thead>
+        <tbody class="f">
+          <tr><td>Pengetahuan</td><td>Belum menyebutkan istilah dasar</td><td>Menyebutkan sebagian istilah</td><td>Menjelaskan sebagian besar istilah</td><td>Menjelaskan semua istilah dengan contoh tepat</td></tr>
+          <tr><td>Keterampilan</td><td>Belum dapat membuat struktur</td><td>Membuat dengan banyak bantuan</td><td>Membuat dengan sedikit bantuan</td><td>Membuat struktur rapi dan mandiri</td></tr>
+        </tbody>
+        <tbody class="f">
+          <tr><td>Kolaborasi</td><td>Belum terlibat</td><td>Terlibat sebagian</td><td>Aktif bekerja sama</td><td>Aktif membantu dan memimpin</td></tr>
+          <tr><td>Penalaran Kritis</td><td>Belum memberi alasan</td><td>Alasan kurang relevan</td><td>Alasan relevan</td><td>Alasan logis dan didukung bukti</td></tr>
+          <tr><td>Refleksi</td><td>Belum mengisi refleksi</td><td>Refleksi singkat</td><td>Refleksi jelas</td><td>Refleksi mendalam dan menghubungkan pengalaman</td></tr>
+        </tbody>
+      </table>
+      <div class="f callout">🏅 Fokus pada <b>proses</b>, bukan hanya hasil akhir.</div>
+    </div>
+    <!-- CATATAN GURU: Sampaikan rubrik ini sejak awal agar murid tahu target capaian. -->
+  </section>
+
+  <!-- ================= 20. RANGKUMAN ================= -->
+  <section class="slide" data-anim="up">
+    <div class="eyebrow"><span>Rangkuman</span><span class="time">⏱ 3 menit</span></div>
+    <h2 class="title">Poin Penting Hari Ini</h2>
+    <div class="sBody">
+      <ul class="bullets gold">
+        <li class="f">Struktur pohon menyusun informasi secara <span class="hl">bertingkat</span>.</li>
+        <li class="f">Bagian teratas disebut <span class="hl">akar (root)</span>.</li>
+        <li class="f">Simpul di atas disebut <span class="hl3">induk</span>, di bawah disebut <span class="hl3">anak</span>.</li>
+        <li class="f">Simpul tanpa anak disebut <span class="hl2">daun (leaf)</span>.</li>
+        <li class="f"><span class="hl">Path</span> adalah jalur dari akar menuju simpul tujuan.</li>
+        <li class="f">Folder digital di komputer memakai prinsip pohon.</li>
+      </ul>
+      <div class="f callout">🧠 Hierarki membuat hidup lebih rapi dan pencarian lebih cepat.</div>
+    </div>
+    <!-- CATATAN GURU: Minta murid menutup buku lalu menyebutkan satu poin secara berantai. -->
+  </section>
+
+  <!-- ================= 21. TINDAK LANJUT ================= -->
+  <section class="slide" data-anim="right">
+    <div class="eyebrow"><span>Tindak Lanjut</span><span class="time">⏱ 2 menit</span></div>
+    <h2 class="title">Setelah Pembelajaran Ini</h2>
+    <div class="sBody">
+      <div class="f grid g2">
+        <div class="card gold">
+          <h3>🏠 Tugas Rumah</h3>
+          <p>Rapikan folder di HP, laptop, atau Google Drive pribadimu. Gambarkan struktur foldernya di buku tulis dan tandai akar, anak, serta daunnya.</p>
+        </div>
+        <div class="card blue">
+          <h3>➡️ Pertemuan Berikutnya</h3>
+          <p>Kita akan mempelajari struktur data lanjutan dan bagaimana komputer mencari data di dalam sebuah pohon.</p>
+        </div>
+      </div>
+      <div class="f callout">📌 Kumpulkan gambar struktur folder paling lambat pertemuan berikutnya.</div>
+    </div>
+    <!-- CATATAN GURU: Ingatkan tenggat pengumpulan dan sampaikan apresiasi atas kerja kelompok hari ini. -->
+  </section>
+
+  <!-- ================= 22. PENUTUP ================= -->
+  <section class="slide" data-anim="zoom">
+    <div class="eyebrow"><span>Penutup</span><span class="time">⏱ 1 menit</span></div>
+    <h2 class="title grad" style="font-size:56px;margin-top:6px">Terima Kasih</h2>
+    <div class="sBody" style="justify-content:center;gap:18px">
+      <div class="f">
+        <span class="chip">✍ Tim MGMP Informatika</span>
+        <span class="chip orange">🏫 SMP Negeri 19 Kota Bekasi</span>
+      </div>
+      <div class="f lead" style="max-width:900px">
+        “Susunlah pengetahuanmu seperti pohon — berakar kuat, bercabang rapi, dan berdaun lebat.”
+      </div>
+      <div class="f callout">🌱 Sampai jumpa di pertemuan berikutnya. Tetap rapi, tetap ingin tahu!</div>
+    </div>
+    <!-- CATATAN GURU: Tutup dengan doa dan salam. Pastikan kelas kembali rapi sebelum murid keluar. -->
+  </section>
+
+  <!-- ================= HUD & KONTROL ================= -->
+  <div id="hud">
+    <div class="left"><span class="dot"></span> Informatika • Kelas IX / Fase D • Berpikir Komputasional</div>
+    <div id="counter">1 / 22</div>
+  </div>
+
+  <div id="hint">Klik / tekan → untuk lanjut</div>
+
+  <div id="nav">
+    <button id="btnPrev" title="Sebelumnya (←)">◀</button>
+    <button id="btnNext" title="Berikutnya (→)">▶</button>
+    <button id="btnFs" title="Layar penuh (F)">⛶</button>
+  </div>
+
+  <div id="bar"><i></i></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var stage   = document.getElementById('stage');
+  var slides  = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var counter = document.getElementById('counter');
+  var barFill = document.querySelector('#bar i');
+  var hint    = document.getElementById('hint');
+  var btnPrev = document.getElementById('btnPrev');
+  var btnNext = document.getElementById('btnNext');
+  var btnFs   = document.getElementById('btnFs');
+  var cur = 0;
+
+  /* ---------- Skala otomatis 1280x720 ---------- */
+  function fit(){
+    var s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    stage.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  /* ---------- HUD ---------- */
+  function updateHUD(){
+    counter.textContent = (cur + 1) + ' / ' + slides.length;
+    barFill.style.width = ((cur + 1) / slides.length * 100) + '%';
+    if(cur === 0){ hint.classList.remove('off'); }
+    else { hint.classList.add('off'); }
+  }
+
+  /* ---------- Pindah slide ---------- */
+  function goTo(i){
+    if(i < 0 || i >= slides.length) return;
+    slides[cur].classList.remove('active');
+    cur = i;
+    var s = slides[cur];
+    var fs = s.querySelectorAll('.f');
+    for(var k = 0; k < fs.length; k++){ fs[k].classList.remove('show'); }
+    s.classList.add('active');
+    updateHUD();
+  }
+
+  /* ---------- Maju: munculkan konten dulu, baru pindah slide ---------- */
+  function next(){
+    var s = slides[cur];
+    var hidden = s.querySelectorAll('.f:not(.show)');
+    if(hidden.length > 0){
+      hidden[0].classList.add('show');
+    } else if(cur < slides.length - 1){
+      goTo(cur + 1);
+    }
+  }
+
+  /* ---------- Mundur ---------- */
+  function prev(){
+    var s = slides[cur];
+    var shown = s.querySelectorAll('.f.show');
+    if(shown.length > 0){
+      shown[shown.length - 1].classList.remove('show');
+    } else if(cur > 0){
+      goTo(cur - 1);
+    }
+  }
+
+  /* ---------- Fullscreen ---------- */
+  function toggleFs(){
+    if(!document.fullscreenElement){
+      if(document.documentElement.requestFullscreen){
+        document.documentElement.requestFullscreen();
+      }
+    } else {
+      if(document.exitFullscreen){ document.exitFullscreen(); }
+    }
+  }
+
+  /* ---------- Klik di mana saja ---------- */
+  document.addEventListener('click', function(e){
+    if(e.target.closest('button')) return;
+    next();
+  });
+
+  btnNext.addEventListener('click', function(e){ e.stopPropagation(); next(); });
+  btnPrev.addEventListener('click', function(e){ e.stopPropagation(); prev(); });
+  btnFs.addEventListener('click',  function(e){ e.stopPropagation(); toggleFs(); });
+
+  /* ---------- Keyboard ---------- */
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if(k === 'ArrowRight' || k === 'ArrowDown' || k === ' ' || k === 'PageDown' || k === 'Enter'){
+      e.preventDefault(); next();
+    } else if(k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp'){
+      e.preventDefault(); prev();
+    } else if(k === 'Home'){
+      e.preventDefault(); goTo(0);
+    } else if(k === 'End'){
+      e.preventDefault(); goTo(slides.length - 1);
+    } else if(k === 'f' || k === 'F'){
+      e.preventDefault(); toggleFs();
+    }
+  });
+
+  updateHUD();
+})();
+</script>
+</body>
+</html>
